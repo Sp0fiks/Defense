@@ -1,0 +1,371 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Крутая стильная игра</title>
+    <style>
+        body {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            background-color: #f0f0f5;
+            font-family: '-apple-system', 'BlinkMacSystemFont', 'Arial', sans-serif;
+            color: #333;
+        }
+        .game-area {
+            width: 90vw;
+            max-width: 600px;
+            height: 60vh;
+            border: 3px solid #007aff;
+            position: relative;
+            overflow: hidden;
+            background-color: #ffffff;
+            border-radius: 15px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+            margin: 20px 0;
+        }
+        .health, .score, .shop-button, .game-over {
+            font-size: 20px;
+            margin: 10px;
+            font-weight: bold;
+            color: #007aff;
+        }
+        .tower {
+            width: 8%;
+            height: 8%;
+            background-color: #ff4081;
+            border-radius: 50%;
+            position: absolute;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.3);
+        }
+        .enemy {
+            width: 5%;
+            height: 5%;
+            background-color: #ffb300;
+            border-radius: 50%;
+            position: absolute;
+            animation: moveEnemy 10s linear infinite;
+        }
+        .hp-bar {
+            height: 10px;
+            background-color: red;
+            position: absolute;
+            width: 100%;
+            bottom: 100%;
+        }
+        .projectile {
+            width: 5px;
+            height: 5px;
+            background-color: #ff4081;
+            position: absolute;
+            border-radius: 50%;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.3);
+            animation: shoot 0.5s linear forwards;
+        }
+        @keyframes shoot {
+            from { transform: translate(0, 0); }
+            to { transform: translate(var(--targetX), var(--targetY)); }
+        }
+        .notification {
+            display: none;
+            position: fixed;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background-color: #f8f8f8;
+            border-radius: 10px;
+            padding: 15px 20px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+            font-size: 16px;
+            z-index: 1000;
+            animation: fadeIn 0.5s ease-in-out, fadeOut 1s 2.5s ease-in-out forwards;
+            border: 1px solid #007aff;
+            color: #333;
+            font-weight: bold;
+            text-align: center;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(-20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        @keyframes fadeOut {
+            from { opacity: 1; transform: translateY(0); }
+            to { opacity: 0; transform: translateY(-20px); }
+        }
+        .shop {
+            display: none;
+            position: fixed;
+            bottom: -100%;
+            left: 50%;
+            transform: translateX(-50%);
+            background-color: #ffffff;
+            border-radius: 15px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+            width: 80vw;
+            max-width: 500px;
+            padding: 20px;
+            z-index: 100;
+            transition: bottom 0.5s ease-in-out;
+        }
+        .shop.open {
+            bottom: 50px;
+        }
+        .shop-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin: 15px 0;
+            padding: 10px;
+            border: 1px solid #007aff;
+            border-radius: 10px;
+            transition: background-color 0.3s;
+        }
+        .shop-item:hover {
+            background-color: #f0f0f0;
+        }
+        .close-shop {
+            cursor: pointer;
+            color: #d32f2f;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <div class="health">Здоровье: <span id="playerHealth">10</span></div>
+    <div class="score">Очки: <span id="score">60</span></div>
+
+    <div class="build-cost">Стоимость установки башни: <span id="towerCost">20</span> очков</div>
+    <button class="shop-button" onclick="openShop()">Открыть магазин</button>
+    <div class="game-area" id="gameArea" onclick="addTower(event)"></div>
+    <div class="notification" id="notification">Уведомление!</div>
+    <div class="game-over" id="gameOver" style="display: none;">
+        Игра окончена! <button onclick="revivePlayer()">Выкупиться</button>
+    </div>
+    
+    <div class="shop" id="shop">
+        <div class="close-shop" onclick="closeShop()">Закрыть магазин</div>
+        <div class="shop-item">
+            <div>Башня 1</div>
+            <div>Цена: 20 очков</div>
+        </div>
+        <div class="shop-item">
+            <div>Башня 2</div>
+            <div>Цена: 40 очков</div>
+        </div>
+        <div class="shop-item">
+            <div>Башня 3</div>
+            <div>Цена: 60 очков</div>
+        </div>
+    </div>
+
+    <script>
+        let playerHealth = 10;
+        let score = 60;
+        let towerCount = 0;
+        const baseTowerCost = 20;
+        const towerCostIncrement = 10;
+        let towers = [];
+        let enemies = [];
+        let enemySpawnInterval;
+
+        function spawnEnemy() {
+            const newEnemy = {
+                id: Date.now(),
+                positionX: 0,
+                health: 100,
+                positionY: Math.random() * 95
+            };
+            enemies.push(newEnemy);
+            updateEnemies();
+        }
+
+        function updateEnemies() {
+            const gameArea = document.getElementById('gameArea');
+            gameArea.innerHTML = '';
+
+            enemies.forEach((enemy, index) => {
+                enemy.positionX += 1;
+
+                if (enemy.positionX > gameArea.offsetWidth) {
+                    playerHealth--;
+                    enemies.splice(index, 1);
+                    document.getElementById('playerHealth').innerText = playerHealth;
+                    showNotification("Враг прошёл через границу!");
+
+                    if (playerHealth <= 0) {
+                        gameOver();
+                    }
+                }
+
+                const enemyDiv = document.createElement('div');
+                enemyDiv.className = 'enemy';
+                enemyDiv.style.left = enemy.positionX + 'px';
+                enemyDiv.style.top = enemy.positionY + '%';
+                gameArea.appendChild(enemyDiv);
+
+                const hpBar = document.createElement('div');
+                hpBar.className = 'hp-bar';
+                hpBar.style.width = (enemy.health / 100) * 100 + '%';
+                enemyDiv.appendChild(hpBar);
+            });
+
+            towers.forEach(tower => {
+                const towerDiv = document.createElement('div');
+                towerDiv.className = 'tower';
+                towerDiv.style.left = tower.position.left + 'px';
+                towerDiv.style.top = tower.position.top + 'px';
+                gameArea.appendChild(towerDiv);
+
+                const radiusDiv = document.createElement('div');
+                radiusDiv.style.width = '300px';
+                radiusDiv.style.height = '300px';
+                radiusDiv.style.border = '1px dashed rgba(255, 0, 0, 0.5)';
+                radiusDiv.style.position = 'absolute';
+                radiusDiv.style.left = (tower.position.left - 142) + 'px';
+                radiusDiv.style.top = (tower.position.top - 142) + 'px';
+                radiusDiv.style.borderRadius = '50%';
+                gameArea.appendChild(radiusDiv);
+
+                shootAtEnemies(tower);
+            });
+        }
+
+        function addTower(event) {
+            const gameArea = document.getElementById('gameArea');
+            const x = (event.clientX - gameArea.getBoundingClientRect().left);
+            const y = (event.clientY - gameArea.getBoundingClientRect().top);
+            const towerCost = baseTowerCost + (towerCount * towerCostIncrement);
+
+            if (score >= towerCost && canPlaceTower(x, y)) {
+                const newTower = {
+                    id: Date.now(),
+                    position: { left: x, top: y }
+                };
+                towers.push(newTower);
+                towerCount++;
+                score -= towerCost;
+                updateTowerCost();
+                document.getElementById('score').innerText = score;
+
+                const towerDiv = document.createElement('div');
+                towerDiv.className = 'tower';
+                towerDiv.style.left = newTower.position.left + 'px';
+                towerDiv.style.top = newTower.position.top + 'px';
+                gameArea.appendChild(towerDiv);
+
+                const radiusDiv = document.createElement('div');
+                radiusDiv.style.width = '300px';
+                radiusDiv.style.height = '300px';
+                radiusDiv.style.border = '1px dashed rgba(255, 0, 0, 0.5)';
+                radiusDiv.style.position = 'absolute';
+                radiusDiv.style.left = (newTower.position.left - 142) + 'px';
+                radiusDiv.style.top = (newTower.position.top - 142) + 'px';
+                radiusDiv.style.borderRadius = '50%';
+                gameArea.appendChild(radiusDiv);
+            } else {
+                showNotification("Недостаточно очков или нельзя установить башню в этой области!");
+            }
+        }
+
+        function canPlaceTower(x, y) {
+            return !towers.some(tower => {
+                const towerX = tower.position.left;
+                const towerY = tower.position.top;
+                return Math.sqrt(Math.pow(towerX - x, 2) + Math.pow(towerY - y, 2)) < 150;
+            });
+        }
+
+        function shootAtEnemies(tower) {
+            for (const enemy of enemies) {
+                if (isInRange(tower, enemy)) {
+                    enemy.health -= 10;
+                    createProjectile(tower.position, { left: enemy.positionX, top: enemy.positionY });
+                    if (enemy.health <= 0) {
+                        score += 5;
+                        document.getElementById('score').innerText = score;
+                        enemies = enemies.filter(e => e.id !== enemy.id);
+                    }
+                    break; // Башня стреляет только по одному врагу за цикл
+                }
+            }
+        }
+
+        function createProjectile(startPos, endPos) {
+            const gameArea = document.getElementById('gameArea');
+            const projectile = document.createElement('div');
+            projectile.className = 'projectile';
+            projectile.style.left = startPos.left + 'px';
+            projectile.style.top = startPos.top + 'px';
+            const deltaX = endPos.left - startPos.left;
+            const deltaY = endPos.top - startPos.top;
+            projectile.style.setProperty('--targetX', deltaX + 'px');
+            projectile.style.setProperty('--targetY', deltaY + 'px');
+            gameArea.appendChild(projectile);
+            setTimeout(() => {
+                gameArea.removeChild(projectile);
+            }, 500);
+        }
+
+        function isInRange(tower, enemy) {
+            const towerX = tower.position.left;
+            const towerY = tower.position.top;
+            return Math.sqrt(Math.pow(towerX - enemy.positionX, 2) + Math.pow(towerY - enemy.positionY, 2)) < 150;
+        }
+
+        function updateTowerCost() {
+            const towerCost = baseTowerCost + (towerCount * towerCostIncrement);
+            document.getElementById('towerCost').innerText = towerCost;
+        }
+
+        function openShop() {
+            const shop = document.getElementById('shop');
+            shop.classList.add('open');
+            setTimeout(() => {
+                shop.style.display = 'block';
+            }, 10);
+        }
+
+        function closeShop() {
+            const shop = document.getElementById('shop');
+            shop.classList.remove('open');
+            setTimeout(() => {
+                shop.style.display = 'none';
+            }, 500);
+        }
+
+        function showNotification(message) {
+            const notification = document.getElementById('notification');
+            notification.innerText = message;
+            notification.style.display = 'block';
+            setTimeout(() => {
+                notification.style.display = 'none';
+            }, 3000);
+        }
+
+        function gameOver() {
+            clearInterval(enemySpawnInterval);
+            document.getElementById('gameOver').style.display = 'block';
+        }
+
+        function revivePlayer() {
+            if (score >= 20) {
+                playerHealth = 10;
+                score -= 20;
+                document.getElementById('playerHealth').innerText = playerHealth;
+                document.getElementById('score').innerText = score;
+                document.getElementById('gameOver').style.display = 'none';
+                enemySpawnInterval = setInterval(spawnEnemy, 2000);
+                setInterval(updateEnemies, 100);
+            } else {
+                showNotification("Недостаточно очков для возрождения!");
+            }
+        }
+
+        enemySpawnInterval = setInterval(spawnEnemy, 2000);
+        setInterval(updateEnemies, 100);
+    </script>
+</body>
+</html>
