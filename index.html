@@ -227,6 +227,7 @@
         let enemySpawnInterval;
         let enemyMoveInterval;
 
+
         document.querySelector('.shop-button').addEventListener('click', openShop);
 
         function spawnEnemy() {
@@ -264,6 +265,9 @@
                 const hpBar = document.createElement('div');
                 hpBar.className = 'hp-bar';
                 hpBar.style.width = (enemy.health / 100) * 100 + '%';
+                if (enemy.health >= 50) {
+                    hpBar.style.backgroundColor = "green";
+                }
                 enemyElement.appendChild(hpBar);
 
                 gameArea.appendChild(enemyElement);
@@ -402,7 +406,6 @@
         function endGame() {
             clearInterval(enemySpawnInterval);
             clearInterval(enemyMoveInterval);
-            towers = [];
             enemies = [];
             updateEnemies();
             document.getElementById('gameOver').style.display = 'block';
