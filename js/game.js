@@ -81,7 +81,7 @@ function addTower() {
     console.log("Стоимость новой башни:", newTowerCost);
 
     if (money >= newTowerCost) {
-        const newTower = new Tower(pathtower[towerCount].x, pathtower[towerCount].y, 15, 'red', "../assets/tower.png");
+        const newTower = new Tower(pathtower[towerCount].x, pathtower[towerCount].y, 15, 'red', "assets/tower.png");
         towers.push(newTower);
         towerCount++;
         money -= newTowerCost;
