@@ -1,0 +1,109 @@
+body{
+    margin: 0;
+    padding: 0;
+}
+#canvas{
+    background-image: url("/assets/map.jpg");
+    background-repeat:no-repeat;
+    background-size: cover ;
+    background-position:center;
+}
+.info-panel {
+    background-color: green;
+    color: white;
+    padding: 10px;
+    width: 300px;
+    border-radius: 8px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.info-item {
+    display: flex;
+    justify-content: space-between;
+}
+
+.info-title {
+    font-weight: bold;
+}
+
+.info-value {
+    font-weight: normal;
+}
+
+.notification-container {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    width: 300px;
+    background-color: #ffffff;
+    border-radius: 10px;
+    padding: 15px;
+    box-sizing: border-box;
+    z-index: 1000;
+    display: none; /* Скрыто по умолчанию */
+}
+
+.notification-container.show {
+    display: block; /* Показывать при активации */
+    animation: slideIn 0.5s ease-out forwards;
+}
+
+.notification-header {
+    font-size: 16px;
+    color: #000;
+    margin-bottom: 5px;
+}
+
+.notification-body {
+    font-size: 14px;
+    color: #333;
+}
+#shopToggleButton {
+    bottom: 20px;
+    left: 20px;
+    z-index: 1000;
+}
+
+.shop-panel {
+    position: fixed;
+    left: 0;
+    bottom: -50%; /* Панель начинается за пределами экрана */
+    width: 100%;
+    background: rgba(0, 0, 0, 0.8);
+    color: white;
+    transition: bottom 0.5s ease; /* Анимация появления и исчезновения */
+    z-index: 999;
+    padding: 20px;
+    box-sizing: border-box;
+    text-align: center;
+}
+
+.shop-panel.open {
+    bottom: 0; /* Панель поднимается наверх */
+}
+
+.menu{
+    position: fixed;
+    left: 0;
+    bottom: 0; /* Панель начинается за пределами экрана */
+    width: 100%;
+    background: rgba(0, 0, 0, 0.8);
+    color: white;
+    transition: bottom 0.5s ease; /* Анимация появления и исчезновения */
+    z-index: 999;
+    padding: 20px;
+    box-sizing: border-box;
+    text-align: center;
+    
+}
+
+@keyframes slideIn {
+    0% {
+        transform: translateY(100%);
+    }
+    100% {
+        transform: translateY(0);
+    }
+}
