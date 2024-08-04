@@ -3,7 +3,7 @@ body{
     padding: 0;
 }
 #canvas{
-    background-image: url("/assets/map.jpg");
+    background-image: url("assets/map.jpg");
     background-repeat:no-repeat;
     background-size: cover ;
     background-position:center;
