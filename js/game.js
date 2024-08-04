@@ -72,19 +72,25 @@ function spawnEnemy() {
 }
 
 function addTower() {
-    const towerCost = baseTowerCost + (towerCount * towerCostIncrement);
-    if (towerCount == 8) {return}
-    console.log(towerCount)
-    if (money >= towerCost) {
-        const newTower = new Tower(pathtower[towerCount].x, pathtower[towerCount].y, 15, 'red',"./assets/tower.png");
+    if (towerCount >= pathtower.length) {
+        console.log("Все позиции для башен заполнены.");
+        return;
+    }
+
+    const newTowerCost = baseTowerCost + (towerCount * towerCostIncrement);
+    console.log("Стоимость новой башни:", newTowerCost);
+
+    if (money >= newTowerCost) {
+        const newTower = new Tower(pathtower[towerCount].x, pathtower[towerCount].y, 15, 'red', "./assets/tower.png");
         towers.push(newTower);
         towerCount++;
-        money -= towerCost;
+        money -= newTowerCost;
         draw();
     } else {
-        showNotification("Недостаточно очков для покупки башни!");
+        showNotification("Недостаточно денег для покупки башни!");
     }
 }
+
 function draw() {
     c.clearRect(0, 0, canvas.width, canvas.height);
     towers.forEach(tower => {
@@ -144,13 +150,16 @@ document.getElementById('Buytower').addEventListener('click', addTower);
 const ShopButton = document.getElementById('shopToggleButton');
 function toggleShop() {
     const shopPanel = document.getElementById('shopPanel');
+    const butt = document.getElementById('Buytower');
     if (shopPanel.style.bottom === '0px' || shopPanel.classList.contains('open')) {
         shopPanel.classList.remove('open');
         shopPanel.style.bottom = '-100%'; // Прячем панель
         ShopButton.style.display = 'block';
     } else {
+        let newTowerCosts = baseTowerCost + (towerCount * towerCostIncrement);
         shopPanel.classList.add('open');
         shopPanel.style.bottom = '0'; // Показываем панель
+        butt.textContent = "Купить башню:"+newTowerCosts;
         ShopButton.style.display = 'none';
     }
 }
